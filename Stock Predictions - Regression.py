@@ -21,7 +21,6 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # Import unformatted data
 fileName = '/Users/dkatz44/Desktop/AMD Base Data.csv'
 
-#df_input = pd.read_excel(fileName, sheet_name='Price Data for Python', index_col ='Market_Date')
 df_input = pd.read_csv(fileName, index_col = 'Market_Date')
 
 df = df_input.rename(columns={
@@ -47,9 +46,6 @@ df = df.rename(columns={
             'VIX Low':'VIX_Low',
             'VIX Open':'VIX_Open',
             'VIX Close':'VIX_Close'})
-
-#df = df.dropna(subset=['open', 'close', 'high', 'low', 'volume'])
-
 
 timePeriodValues = [5,10,14,20,30,50]
 
@@ -447,70 +443,6 @@ df['RSI_Oversold'] = df.apply(lambda x: 1 if x['RSI_10'] <= 30 else 0, axis=1)
 df['RSI_Overbought_MoveIn'] = df.apply(lambda x: 1 if x['RSI_10'] >=70 and x['RSI_Diff'] > 0 and x['RSI_Shift'] < 70 else 0, axis=1)  
 df['RSI_Overbought'] = df.apply(lambda x: 1 if x['RSI_10'] >=70 else 0, axis=1)   
 
-"""
-df['CDL2CROWS'] = CDL2CROWS(df)
-df['CDLXSIDEGAP3METHODS'] = CDLXSIDEGAP3METHODS(df)
-df['CDLUPSIDEGAP2CROWS'] = CDLUPSIDEGAP2CROWS(df)
-df['CDLUNIQUE3RIVER'] = CDLUNIQUE3RIVER(df)
-df['CDLTRISTAR'] = CDLTRISTAR(df)
-df['CDLTHRUSTING'] = CDLTHRUSTING(df)
-df['CDLTASUKIGAP'] = CDLTASUKIGAP(df)
-df['CDLTAKURI'] = CDLTAKURI(df)
-df['CDLSTICKSANDWICH'] = CDLSTICKSANDWICH(df)
-df['CDLSTALLEDPATTERN'] = CDLSTALLEDPATTERN(df)
-df['CDLSPINNINGTOP'] = CDLSPINNINGTOP(df)
-df['CDLSHORTLINE'] = CDLSHORTLINE(df)
-df['CDLSHOOTINGSTAR'] = CDLSHOOTINGSTAR(df)
-df['CDLSEPARATINGLINES'] = CDLSEPARATINGLINES(df)
-df['CDLRISEFALL3METHODS'] = CDLRISEFALL3METHODS(df)
-df['CDLRICKSHAWMAN'] = CDLRICKSHAWMAN(df)
-df['CDLPIERCING'] = CDLPIERCING(df)
-df['CDLONNECK'] = CDLONNECK(df)
-df['CDLMORNINGSTAR'] = CDLMORNINGSTAR(df, penetration=0)
-df['CDLMORNINGDOJISTAR'] = CDLMORNINGDOJISTAR(df, penetration=0)
-df['CDLMATHOLD'] = CDLMATHOLD(df, penetration=0)
-df['CDLMATCHINGLOW'] = CDLMATCHINGLOW(df)
-df['CDLMARUBOZU'] = CDLMARUBOZU(df)
-df['CDLLONGLINE'] = CDLLONGLINE(df)
-df['CDLLONGLEGGEDDOJI'] = CDLLONGLEGGEDDOJI(df)
-df['CDLLADDERBOTTOM'] = CDLLADDERBOTTOM(df)
-df['CDLKICKINGBYLENGTH'] = CDLKICKINGBYLENGTH(df)
-df['CDLKICKING'] = CDLKICKING(df)
-df['CDLINVERTEDHAMMER'] = CDLINVERTEDHAMMER(df)
-df['CDLINNECK'] = CDLINNECK(df)
-df['CDLIDENTICAL3CROWS'] = CDLIDENTICAL3CROWS(df)
-df['CDLHOMINGPIGEON'] = CDLHOMINGPIGEON(df)
-df['CDLHIKKAKEMOD'] = CDLHIKKAKEMOD(df)
-df['CDLHIKKAKE'] = CDLHIKKAKE(df)
-df['CDLHIGHWAVE'] = CDLHIGHWAVE(df)
-df['CDLHARAMICROSS'] = CDLHARAMICROSS(df)
-df['CDLHARAMI'] = CDLHARAMI(df)
-df['CDLHANGINGMAN'] = CDLHANGINGMAN(df)
-df['CDLHAMMER'] = CDLHAMMER(df)
-df['CDLGRAVESTONEDOJI'] = CDLGRAVESTONEDOJI(df)
-df['CDLGAPSIDESIDEWHITE'] = CDLGAPSIDESIDEWHITE(df)
-df['CDLEVENINGSTAR'] = CDLEVENINGSTAR(df, penetration=0)
-df['CDLEVENINGDOJISTAR'] = CDLEVENINGDOJISTAR(df, penetration=0)
-df['CDLENGULFING'] = CDLENGULFING(df)
-df['CDLDRAGONFLYDOJI'] = CDLDRAGONFLYDOJI(df)
-df['CDLDOJISTAR'] = CDLDOJISTAR(df)
-df['CDLDOJI'] = CDLDOJI(df)
-df['CDLDARKCLOUDCOVER'] = CDLDARKCLOUDCOVER(df, penetration=0)
-df['CDLCOUNTERATTACK'] = CDLCOUNTERATTACK(df)
-df['CDLCONCEALBABYSWALL'] = CDLCONCEALBABYSWALL(df)
-df['CDLCLOSINGMARUBOZU'] = CDLCLOSINGMARUBOZU(df)
-df['CDLBREAKAWAY'] = CDLBREAKAWAY(df)
-df['CDLBELTHOLD'] = CDLBELTHOLD(df)
-df['CDLADVANCEBLOCK'] = CDLADVANCEBLOCK(df)
-df['CDLABANDONEDBABY'] = CDLABANDONEDBABY(df, penetration=0)
-df['CDL3WHITESOLDIERS'] = CDL3WHITESOLDIERS(df)
-df['CDL3STARSINSOUTH'] = CDL3STARSINSOUTH(df)
-df['CDL3OUTSIDE'] = CDL3OUTSIDE(df)
-df['CDL3LINESTRIKE'] = CDL3LINESTRIKE(df)
-df['CDL3INSIDE'] = CDL3INSIDE(df)
-df['CDL3BLACKCROWS'] = CDL3BLACKCROWS(df)
-"""
-
 # Add in preivous day values and % change
 def previousDayValue(df, colName):
     
@@ -530,19 +462,8 @@ df['Market_Q4'] = pd.Series(df.index.values, index = df.index).apply(lambda x: 1
 
 def nextClose(df):
     
-    nextClose = pd.Series(df['close'].shift(-1),name='nextClose',index=df.index)
-   # percentChange = pd.Series((nextClose/df['close'])-1,name='nextCloseChange',index=df.index)
-    
-  #  outcomeVarHigher = pd.Series(percentChange.map(
-  #      lambda x: 1 if x >= targetValParamHigher else 0),name=targetNameParamHigher,index=df.index)
-        
-  #  outcomeVarLower = pd.Series(percentChange.map(
-  #      lambda x: 1 if x <= targetValParamLower else 0),name=targetNameParamLower,index=df.index)
-  
+    nextClose = pd.Series(df['close'].shift(-1),name='nextClose',index=df.index)  
     df = df.join(nextClose)
-    #df = df.join(percentChange)
-    #df = df.join(outcomeVarHigher)
-    #df = df.join(outcomeVarLower)
     
     return df
 

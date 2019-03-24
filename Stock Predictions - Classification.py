@@ -28,7 +28,6 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # Import unformatted data
 fileName = '/Users/dkatz44/Desktop/AMD Base Data.csv'
 
-#df_input = pd.read_excel(fileName, sheet_name='Price Data for Python', index_col ='Market_Date')
 df_input = pd.read_csv(fileName, index_col = 'Market_Date')
 
 df = df_input.rename(columns={
@@ -59,11 +58,9 @@ import numpy as np
 
 #Set start and end dates
 dfMaxDate = df.tail(1).index.values[0]
-#date_1 = datetime.datetime.strptime(dfMaxDate, "%m/%d/%y")
 
 start = dfMaxDate + np.timedelta64(1,'D') # Maxdate + 1
 start = datetime.datetime.utcfromtimestamp(start.tolist()/1e9)
-#start = date_1 + datetime.timedelta(days=1) # Max of data set date + 1
 start = datetime.datetime.strftime(start, "%Y-%m-%d")
 start = datetime.datetime.strptime(start, "%Y-%m-%d")
 
@@ -109,7 +106,7 @@ df_new_day.head()
 """
 #VIX
 import quandl
-quandl.ApiConfig.api_key = "CjQzF7bQmm17b-jgQgJ8"
+quandl.ApiConfig.api_key = ""
 
 vix = quandl.get("CBOE/VIX", start_date="2018-12-01", end_date="2018-12-09")
 #vix = quandl.get("CBOE/VIX", start_date=start, end_date=end)
@@ -140,9 +137,6 @@ df = df.rename(columns={
             'VIX Low':'VIX_Low',
             'VIX Open':'VIX_Open',
             'VIX Close':'VIX_Close'})
-
-#df = df.dropna(subset=['open', 'close', 'high', 'low', 'volume'])
-
 
 timePeriodValues = [5,10,14,20,30,50]
 
@@ -692,13 +686,11 @@ def Create_Model (X_train,
         reg_alpha=reg_alpha,
         objective= 'binary:logistic',
         nthread=4,
-     #scale_pos_weight=1,
         seed=12)
     
     cv_folds=5
-    #early_stopping_rounds=50
     
-    eval_metric = eval_metric#'logloss'#'auc'
+    eval_metric = eval_metric
      
     xgb_param = ROCforest.get_xgb_params()
     xgtrain = xgb.DMatrix(X_train.values, label=y_train.values)
@@ -709,8 +701,7 @@ def Create_Model (X_train,
                nfold=cv_folds,
                metrics=eval_metric
                )
-              # early_stopping_rounds=early_stopping_rounds) 
-               # , show_progress=False)
+
     ROCforest.set_params(n_estimators=cvresult.shape[0])
     
     ROCforest.fit(X_train, y_train)
@@ -718,7 +709,7 @@ def Create_Model (X_train,
     return ROCforest
     
 def Model_Results (model, X_test, y_test):
-     # Determine the false positive and true positive rates
+    # Determine the false positive and true positive rates
     y_pred = model.predict(X_test)
     y_pred_probs = model.predict_proba(X_test)[:,1]
     
@@ -782,57 +773,6 @@ def Model_Results (model, X_test, y_test):
     finalDf['Target'] = y_test
 
     return finalDf
-
-"""
-
-Parameter Tuning
-
-"""
-
-def Parameter_Tuning(dataframe):
-
-    train = formattedDf    
-    
-    predictors = [x for x in train.columns if x not in ['Target','nextClose','nextCloseChange']]
-    
-    parameters = {'nthread':[4], #when use hyperthread, xgboost may become slower
-                  'objective':['binary:logistic'],
-                  'learning_rate': [0.2,0.5,0.7,1], #so called `eta` value
-                  'max_depth':[i for i in range(3,8)],
-                  'min_child_weight':[i for i in range(3,8)],
-                  'silent': [1],
-                  'subsample':[i/10.0 for i in range(4,8)],
-                  #'subsample':[0.6],
-                  'colsample_bytree':[i/10.0 for i in range(5,9)],
-                  'n_estimators': [100],  #number of trees, change it to 1000 for better results
-                  'gamma': [i/10.0 for i in range(0,5)],
-                  #'reg_alpha':[1e-5, 1e-2, 0.1, 1, 100],
-                  'reg_alpha':[0.1,0.5,1],
-                  #'missing':['NAN'],
-                  'seed': [1337]}
-    
-    xgb_model = xgb.XGBClassifier()
-    
-    clf = GridSearchCV(xgb_model, parameters, n_jobs=5, 
-                       cv=StratifiedKFold(train["Target"], n_folds=3, shuffle=True), 
-                       scoring='roc_auc',
-                       #scoring = "neg_log_loss"
-                       verbose=1, refit=True)
-    
-    clf.fit(train[predictors], train["Target"])
-    
-    #trust your CV!
-    best_parameters, score, _ = max(clf.grid_scores_, key=lambda x: x[1])
-    print('Raw AUC score:', score)
-    for param_name in sorted(best_parameters.keys()):
-        print("%s: %r" % (param_name, best_parameters[param_name]))
-
-    return best_parameters
-
-
-# Restrict on Data newer than 2015
-# Rename target col as 'Target'
-#formattedDf = df[df.index >= '2015-1-1'].rename(columns={targetColName: 'Target'})
 
 formattedDf = df.rename(columns={targetColNameHigher: 'Target_Higher',
                                  targetColNameLower: 'Target_Lower'})
@@ -914,9 +854,6 @@ ROCforest_Lower = Create_Model(X_train_Lower, X_test_Lower, y_train_Lower, y_tes
                          reg_alpha=reg_alpha,
                          eval_metric = eval_metric)
 
-#xgb.plot_tree(ROCforest,num_trees=0)
-#plt.rcParams['figure.figsize'] = [100, 50]
-
 plt.show()
 xgb.plot_importance(ROCforest_Higher,max_num_features=20)
 xgb.plot_importance(ROCforest_Lower,max_num_features=20)
@@ -966,108 +903,6 @@ fileName = '/Users/dkatz44/Desktop/AMD Preds Relevant Cols.csv'
 
 predsDf.to_csv(fileName, index_label = 'Market_Date')
 
-#%%
-"""
-
-Feature Importance Testing
-
-"""
-
-
-feat_imp = pd.Series(ROCforest_Higher.get_booster().get_score(importance_type='weight')).sort_values(ascending=False)
-
-#%%
-
-
-fileName = '/Users/dkatz44/Desktop/feature importances.csv'
-
-feat_imp.to_csv(fileName)
-#%%
-
-important_features = feat_imp[feat_imp > 10]
-
-X_train, X_test, y_train, y_test = train_test_split(X[important_features.index.values], 
-                                                    y, 
-                                                    test_size=.20,
-                                                    random_state=12)
-#%%
-ROCforest = Create_Model(X_train, X_test, y_train, y_test,
-                         learning_rate=learning_rate,
-                         n_estimators=n_estimators,
-                         max_depth=max_depth,
-                         min_child_weight=min_child_weight,
-                         gamma=gamma,
-                         subsample=subsample,
-                         colsample_bytree=colsample_bytree,
-                         reg_alpha=reg_alpha,
-                         eval_metric = eval_metric)
-
-#%%
-finalDf = Model_Results(ROCforest)
-
-
-"""
-
-Feature Importance Threshold Testing
-
-"""
-
-# shuffle and split training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.30, random_state=12) 
-
-#%%
-
-# use feature importance for feature selection
-from numpy import sort
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.feature_selection import SelectFromModel
-
-#%%
-thresh = 10
-
-selection = SelectFromModel(ROCforest, threshold=thresh, prefit=True)
-
-#%%
-
-selection.get_params
-#%%
-
-select_X_train = selection.transform(X_train)
-#%%
-# train model
-selection_model = XGBClassifier()
-selection_model.fit(select_X_train, y_train)
-# eval model
-select_X_test = selection.transform(X_test)
-y_pred = selection_model.predict(select_X_test)
-
-#%%
-
-model = ROCforest
-
-thresholds = sort(model.feature_importances_)
-#%%
-
-thresholds
-
-#%%
-for thresh in thresholds:
-	# select features using threshold
-	selection = SelectFromModel(model, threshold=thresh, prefit=True)
-	select_X_train = selection.transform(X_train)
-	# train model
-	selection_model = XGBClassifier()
-	selection_model.fit(select_X_train, y_train)
-	# eval model
-	select_X_test = selection.transform(X_test)
-	y_pred = selection_model.predict(select_X_test)
-	predictions = [round(value) for value in y_pred]
-	accuracy = accuracy_score(y_test, predictions)
-	print("Thresh=%.3f, n=%d, Accuracy: %.2f%%" % (thresh, select_X_train.shape[1], accuracy*100.0))
-
-#%%
-
 import joblib
 
 fileName = '/Users/dkatz44/Desktop/savedModelHigher.joblib.dat'
@@ -1079,6 +914,14 @@ fileName = '/Users/dkatz44/Desktop/savedModelLower.joblib.dat'
 
 # save model to file
 joblib.dump(ROCforest_Lower, fileName)
+
+#%%
+
+"""
+
+Running Predictions on Saved Models
+
+"""
 
 #%%
 # load models from file
@@ -1158,6 +1001,89 @@ fileName = '/Users/dkatz44/Desktop/AMD Preds Relevant Cols.csv'
 dfSavedResults.to_csv(fileName, index_label = 'Market_Date')
 
 
+#%%
+"""
 
+Feature Importance Testing
+
+"""
+
+
+feat_imp = pd.Series(ROCforest_Higher.get_booster().get_score(importance_type='weight')).sort_values(ascending=False)
+
+#%%
+
+
+fileName = '/Users/dkatz44/Desktop/feature importances.csv'
+
+feat_imp.to_csv(fileName)
+#%%
+
+important_features = feat_imp[feat_imp > 10]
+
+X_train, X_test, y_train, y_test = train_test_split(X[important_features.index.values], 
+                                                    y, 
+                                                    test_size=.20,
+                                                    random_state=12)
+#%%
+ROCforest = Create_Model(X_train, X_test, y_train, y_test,
+                         learning_rate=learning_rate,
+                         n_estimators=n_estimators,
+                         max_depth=max_depth,
+                         min_child_weight=min_child_weight,
+                         gamma=gamma,
+                         subsample=subsample,
+                         colsample_bytree=colsample_bytree,
+                         reg_alpha=reg_alpha,
+                         eval_metric = eval_metric)
+
+#%%
+finalDf = Model_Results(ROCforest)
+
+
+"""
+
+Parameter Tuning
+
+"""
+
+def Parameter_Tuning(dataframe):
+
+    train = formattedDf    
+    
+    predictors = [x for x in train.columns if x not in ['Target','nextClose','nextCloseChange']]
+    
+    parameters = {'nthread':[4],
+                  'objective':['binary:logistic'],
+                  'learning_rate': [0.2,0.5,0.7,1],
+                  'max_depth':[i for i in range(3,8)],
+                  'min_child_weight':[i for i in range(3,8)],
+                  'silent': [1],
+                  'subsample':[i/10.0 for i in range(4,8)],
+                  #'subsample':[0.6],
+                  'colsample_bytree':[i/10.0 for i in range(5,9)],
+                  'n_estimators': [100],  
+                  'gamma': [i/10.0 for i in range(0,5)],
+                  #'reg_alpha':[1e-5, 1e-2, 0.1, 1, 100],
+                  'reg_alpha':[0.1,0.5,1],
+                  #'missing':['NAN'],
+                  'seed': [12]}
+    
+    xgb_model = xgb.XGBClassifier()
+    
+    clf = GridSearchCV(xgb_model, parameters, n_jobs=5, 
+                       cv=StratifiedKFold(train["Target"], n_folds=3, shuffle=True), 
+                       scoring='roc_auc',
+                       #scoring = "neg_log_loss"
+                       verbose=1, refit=True)
+    
+    clf.fit(train[predictors], train["Target"])
+    
+    best_parameters, score, _ = max(clf.grid_scores_, key=lambda x: x[1])
+    print('Raw AUC score:', score)
+    for param_name in sorted(best_parameters.keys()):
+        print("%s: %r" % (param_name, best_parameters[param_name]))
+
+    return best_parameters
 
 
